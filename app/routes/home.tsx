@@ -6,6 +6,7 @@ import Skills from "~/components/Skills";
 import Projects from "~/components/Projects";
 import Contact from "~/components/Contact";
 import Footer from "~/components/Footer";
+import { getProjects } from "~/api/api";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -14,14 +15,19 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function Home() {
+export async function loader() {
+  const projects = await getProjects();
+  return { projects };
+}
+
+export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <main>
       <Hero />
       <About />
       <GitHubStats />
       <Skills />
-      <Projects />
+      <Projects projects={loaderData.projects} />
       <Contact />
       <Footer />
     </main>

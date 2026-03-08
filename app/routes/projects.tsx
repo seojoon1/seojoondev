@@ -2,7 +2,7 @@ import type { Route } from "./+types/projects";
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { Github, ExternalLink, ArrowLeft } from 'lucide-react';
-import { projects } from '~/data/projectsData';
+import { getProjects } from '~/api/api';
 import { Link } from 'react-router';
 import Footer from '~/components/Footer';
 
@@ -13,7 +13,13 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function ProjectsPage() {
+export async function loader() {
+  const projects = await getProjects();
+  return { projects };
+}
+
+export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
+  const { projects } = loaderData;
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 

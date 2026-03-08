@@ -1,10 +1,10 @@
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { Github, ExternalLink, ArrowRight } from 'lucide-react';
-import { projects } from '~/data/projectsData';
+import type { Project } from '~/api/api';
 import { Link } from 'react-router';
 
-export default function Projects() {
+export default function Projects({ projects }: { projects: Project[] }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   
