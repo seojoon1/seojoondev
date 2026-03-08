@@ -42,6 +42,9 @@ export default function Header() {
             <button onClick={() => scrollToSection('skills')} className="hover:text-abigail-500 transition-colors">Skills</button>
             <button onClick={() => scrollToSection('projects')} className="hover:text-blue-600 transition-colors">Projects</button>
             <button onClick={() => scrollToSection('contact')} className="hover:text-indigo-600 transition-colors">Contact</button>
+            <Link to="/blog" className="hover:text-green-600 transition-colors">
+              Blog
+            </Link>
           </div>
 
           <div className="flex items-center space-x-4">
