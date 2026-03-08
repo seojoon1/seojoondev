@@ -1,2 +1,33 @@
 @import "tailwindcss";
+@theme {
+  --color-mint-500: #55b395;
+  --color-abigail-500: #9ea4d3;
+}
+@variant dark (&:where(.dark, .dark *));
+
+/* 그라디언트 애니메이션 */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
+
+/* 글래스모피즘 블러 효과 개선 */
+@supports (backdrop-filter: blur(10px)) {
+  .backdrop-blur-md {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
 
