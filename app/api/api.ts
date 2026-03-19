@@ -1,8 +1,18 @@
 // 엑시오스로 API 호출 함수 정의
-import axios from 'axios';
-import type { S } from 'node_modules/framer-motion/dist/types.d-DOCC-kZB';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 // API 기본 URL 설정
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// 메모리에 저장할 Access Token
+let accessToken: string | null = null;
+
+// Access Token setter/getter
+export const setAccessToken = (token: string | null) => {
+  accessToken = token;
+  //  console.log('🔑 Access Token 설정됨:', token ? '***' + token.slice(-8) : 'null');
+};
+
+export const getAccessToken = () => accessToken;
 
 //axios 인스턴스 생성
 const api = axios.create({
@@ -10,7 +20,72 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 })
+
+// 요청 인터셉터: Access Token을 헤더에 추가
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    // getter 함수를 사용하여 최신 토큰 값 가져오기
+    const token = getAccessToken();
+    // console.log('📤 API 요청:', config.url, '| Token:', token ? '있음 (***' + token.slice(-8) + ')' : '❌ 없음');
+
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+      // console.log('✅ Authorization 헤더 추가됨');
+    } else if (!token) {
+      // console.warn('⚠️ 토큰이 없어서 Authorization 헤더를 추가하지 않았습니다!');
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// 응답 인터셉터: 401 에러 처리
+api.interceptors.response.use(
+  (response) => {
+    console.log('✅ API 응답 성공:', response.config.url);
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+    // 403 에러이고 재시도하지 않은 요청인 경우
+    if (error.response?.status ===  403 && !originalRequest._retry) {
+      console.log('⚠️ 403  에러 발생! 토큰 갱신 시도...');
+      originalRequest._retry = true;
+
+      try {
+        // Refresh Token으로 새로운 Access Token 요청
+        const response = await api.post<{ token: string }>('/auth/refresh');
+
+        console.log('🔄 토큰 갱신 성공!');
+        // 새 Access Token 저장
+        setAccessToken(response.data.token);
+
+        // 원래 요청 재시도
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${response.data.token}`;
+        }
+
+        return api(originalRequest);
+      } catch (refreshError) {
+        console.log('❌ 토큰 갱신 실패! 로그인 페이지로 이동...');
+        // Refresh Token도 만료된 경우 로그인 페이지로 리다이렉트
+        setAccessToken(null);
+
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+
+        return Promise.reject(refreshError);
+      }
+    }
+
+    console.error('❌ API 에러:', error.response?.status, error.config.url);
+    return Promise.reject(error);
+  }
+);
 
 //응답 타입 지정
 export interface Project {
@@ -36,6 +111,7 @@ export const getProjects = async (): Promise<Project[]> => {
 
 //블로그 응답 타입 지정
 export interface Blog {
+  id: string;
   title: string;
   content: string;
   tags: string[] | string;
@@ -54,14 +130,81 @@ export const getBlogs = async (): Promise<Blog[]> => {
   }
 }
 
-export const postBlog = async (): Promise<Blog[]> => {
-  try{
-    const response = await api.post<Blog[]>('/posts');
-    return response.data;
-  }
-  catch(error){
+// 블로그 생성 요청 타입
+export interface CreateBlogData {
+  title: string;
+  content: string;
+  tags: string;
+  image?: string | null;
+  image_file?: File | null;
+}
+
+export const postBlog = async (data: CreateBlogData): Promise<Blog> => {
+  try {
+    // image_file이 있으면 FormData 사용, 없으면 JSON 전송
+    if (data.image_file) {
+      const formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('content', data.content);
+      formData.append('tags', data.tags);
+      if (data.image) {
+        formData.append('image', data.image);
+      }
+      formData.append('image_file', data.image_file);
+
+      const response = await api.post<Blog>('/posts', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } else {
+      const response = await api.post<Blog>('/posts', {
+        title: data.title,
+        content: data.content,
+        tags: data.tags,
+        image: data.image || null,
+      });
+      return response.data;
+    }
+  } catch (error) {
     console.error('블로그 생성 중 오류 발생:', error);
     throw error;
   }
 }
 
+// 블로그 삭제하는 함수
+export const deleteBlog = async (id: string): Promise<void> => {
+  try {
+    await api.delete(`/posts/${id}`);
+  } catch (error) {
+    console.error('블로그 삭제 중 오류 발생:', error);
+    throw error;
+  }
+}
+
+
+//로그인
+export const adminLogin = async(username: string, password: string): Promise<{ access_token: string }> => {
+  try {
+    const response = await api.post<{ access_token: string }>('/auth/login', { username, password });
+
+    setAccessToken(response.data.access_token);
+
+    return response.data;
+  }
+  catch(error) {
+    throw error;
+  }
+}
+
+// 로그아웃
+export const logout = async (): Promise<void> => {
+  try {
+    await api.post('/auth/logout');
+    setAccessToken(null);
+  } catch (error) {
+    console.error('로그아웃 중 오류 발생:', error);
+    throw error;
+  }
+}

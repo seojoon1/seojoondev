@@ -1,5 +1,7 @@
 import type { Route } from "./+types/login";
 import { useState } from "react";
+import { useNavigate } from "react-router";
+import { adminLogin } from "~/api/api";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -11,10 +13,29 @@ export function meta({}: Route.MetaArgs) {
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt:", { email, password });
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await adminLogin(email, password);
+
+      // 로그인 성공 후 대시보드로 리다이렉트
+      console.log("🔀 대시보드로 이동 중...");
+      navigate("/admin/dashboard");
+    } catch (error: any) {
+      setError(
+        error.response?.data?.message ||
+        "로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
