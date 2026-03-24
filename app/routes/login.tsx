@@ -2,7 +2,12 @@ import type { Route } from "./+types/login";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { adminLogin } from "~/api/api";
+import { requireGuest } from "~/utils/auth";
 
+export async function clientLoader() {
+  requireGuest();
+  return null;
+}
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "로그인 | seojoon1" },
@@ -27,6 +32,8 @@ export default function Login() {
 
       // 로그인 성공 후 대시보드로 리다이렉트
       console.log("🔀 대시보드로 이동 중...");
+      const { getAccessToken } = await import("~/api/api");
+      console.log("🚀 navigate 직전 저장된 토큰 확인:", getAccessToken());
       navigate("/admin/dashboard");
     } catch (error: any) {
       setError(

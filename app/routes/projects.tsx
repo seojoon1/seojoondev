@@ -14,7 +14,7 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export async function loader() {
+export async function clientLoader() {
   const projects = await getProjects();
   return { projects };
 }

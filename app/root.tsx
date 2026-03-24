@@ -12,6 +12,10 @@ import "./app.css";
 import { ThemeProvider } from "~/contexts/ThemeContext";
 import Header from "~/components/header";
 
+export function HydrateFallback() {
+  return <div className="p-4 text-center">Loading...</div>;
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">

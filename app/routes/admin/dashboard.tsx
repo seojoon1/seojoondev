@@ -2,6 +2,8 @@ import type { Route } from "./+types/dashboard";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { getBlogs, deleteBlog, logout, type Blog } from "~/api/api";
+import { requireAuth } from "~/utils/auth";
+
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -10,9 +12,10 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export async function loader() {
+export async function clientLoader() {
+  const token = requireAuth();
   const blogs = await getBlogs();
-  return { blogs };
+  return { blogs, token };
 }
 
 export default function AdminDashboard({ loaderData }: Route.ComponentProps) {

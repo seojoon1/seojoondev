@@ -1,7 +1,13 @@
 import type { Route } from "./+types/new";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { requireAuth } from "~/utils/auth";
 import { postBlog } from "~/api/api";
+
+export function clientLoader() {
+  requireAuth();
+  return null;
+}
 
 export function meta({}: Route.MetaArgs) {
   return [

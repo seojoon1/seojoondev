@@ -3,16 +3,24 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
 // API 기본 URL 설정
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// 메모리에 저장할 Access Token
-let accessToken: string | null = null;
-
-// Access Token setter/getter
+// 메모리에 저장할 Access Token (대신 localStorage 사용 권장)
+// SPA 환경이거나 새로고침 시에도 유지되도록 localStorage를 활용합니다.
 export const setAccessToken = (token: string | null) => {
-  accessToken = token;
-  //  console.log('🔑 Access Token 설정됨:', token ? '***' + token.slice(-8) : 'null');
+  if (typeof window !== 'undefined') {
+    if (token) {
+      localStorage.setItem('access_token', token);
+    } else {
+      localStorage.removeItem('access_token');
+    }
+  }
 };
 
-export const getAccessToken = () => accessToken;
+export const getAccessToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('access_token');
+  }
+  return null;
+};
 
 //axios 인스턴스 생성
 const api = axios.create({
@@ -57,15 +65,15 @@ api.interceptors.response.use(
 
       try {
         // Refresh Token으로 새로운 Access Token 요청
-        const response = await api.post<{ token: string }>('/auth/refresh');
+        const response = await api.post<{ access_token: string }>('/auth/refresh');
 
         console.log('🔄 토큰 갱신 성공!');
         // 새 Access Token 저장
-        setAccessToken(response.data.token);
+        setAccessToken(response.data.access_token);
 
         // 원래 요청 재시도
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${response.data.token}`;
+          originalRequest.headers.Authorization = `Bearer ${response.data.access_token}`;
         }
 
         return api(originalRequest);
@@ -114,7 +122,7 @@ export interface Blog {
   id: string;
   title: string;
   content: string;
-  tags: string[] | string;
+  tags: string[];
   image: string;
 }
 
@@ -185,11 +193,15 @@ export const deleteBlog = async (id: string): Promise<void> => {
 
 
 //로그인
-export const adminLogin = async(username: string, password: string): Promise<{ access_token: string }> => {
+export const adminLogin = async(username: string, password: string): Promise<{ token: string }> => {
   try {
-    const response = await api.post<{ access_token: string }>('/auth/login', { username, password });
-
-    setAccessToken(response.data.access_token);
+    const response = await api.post<any>('/auth/login', { username, password });
+    
+    // 서버가 주는 키가 token인지 access_token인지 확인하여 안전하게 저장
+    const tokenToSave = response.data.access_token;
+    
+    console.log('로그인 응답 토큰:', tokenToSave ? '정상 발급' : '없음 (서버 응답 확인 필요)');
+    setAccessToken(tokenToSave);
 
     return response.data;
   }
