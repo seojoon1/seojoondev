@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @theme {
   --color-mint-500: #55b395;
   --color-abigail-500: #9ea4d3;
