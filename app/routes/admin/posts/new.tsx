@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { requireAuth } from "~/utils/auth";
 import { postBlog } from "~/api/api";
+import ReactMarkdown from 'react-markdown';
 
 export function clientLoader() {
   requireAuth();
@@ -24,8 +25,9 @@ export default function NewPost() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [onMarkdown, setOnMarkdown] = useState(false);
   const navigate = useNavigate();
-
+  
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImageFile(e.target.files[0]);
@@ -120,22 +122,62 @@ export default function NewPost() {
 
             {/* 내용 */}
             <div>
-              <label
-                htmlFor="content"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                내용 <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                required
-                disabled={isLoading}
-                rows={10}
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors outline-none disabled:opacity-50 disabled:cursor-not-allowed resize-y text-sm sm:text-base"
-                placeholder="포스트 내용을 작성하세요"
-              />
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="content"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  내용 <span className="text-red-500">*</span>
+                </label>
+                <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden text-xs font-medium">
+                  <button
+                    type="button"
+                    onClick={() => setOnMarkdown(false)}
+                    className={`px-3 py-1.5 transition-colors ${
+                      !onMarkdown
+                        ? "bg-blue-600 text-white"
+                        : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    작성
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOnMarkdown(true)}
+                    className={`px-3 py-1.5 transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                      onMarkdown
+                        ? "bg-blue-600 text-white"
+                        : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    미리보기
+                  </button>
+                </div>
+              </div>
+              {onMarkdown ? (
+                <div className="w-full min-h-[268px] px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 overflow-y-auto">
+                  {content ? (
+                    <div className="prose prose-gray dark:prose-invert max-w-none text-sm sm:text-base">
+                      <article>
+                        <ReactMarkdown>{content}</ReactMarkdown>
+                      </article>
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 dark:text-gray-500 text-sm">미리볼 내용이 없습니다.</p>
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  id="content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  rows={10}
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors outline-none disabled:opacity-50 disabled:cursor-not-allowed resize-y text-sm sm:text-base"
+                  placeholder="포스트 내용을 작성하세요"
+                />
+              )}
             </div>
 
             {/* 태그 */}
