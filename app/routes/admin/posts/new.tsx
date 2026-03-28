@@ -2,7 +2,7 @@ import type { Route } from "./+types/new";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { requireAuth } from "~/utils/auth";
-import { postBlog } from "~/api/api";
+import { postBlog, postProject } from "~/api/api";
 import ReactMarkdown from 'react-markdown';
 
 export function clientLoader() {
@@ -23,9 +23,12 @@ export default function NewPost() {
   const [tags, setTags] = useState("");
   const [image, setImage] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [github, setGithub] = useState("");
+  const [demo, setDemo] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [onMarkdown, setOnMarkdown] = useState(false);
+  const [postType, setPostType] = useState<"blog" | "project">("blog");
   const navigate = useNavigate();
   
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,13 +43,24 @@ export default function NewPost() {
     setError("");
 
     try {
-      await postBlog({
-        title,
-        content,
-        tags,
-        image: image || null,
-        image_file: imageFile,
-      });
+      if (postType === "blog") {
+        await postBlog({
+          title,
+          content,
+          tags,
+          image: image || null,
+          image_file: imageFile,
+        });
+      } else if (postType === "project") {
+        await postProject({
+          title,
+          description: content,
+          tags,
+          github,
+          demo,
+          image_file: imageFile!,
+        });
+      }
 
       alert("포스트가 생성되었습니다!");
       // 성공 후 대시보드로 이동
@@ -93,6 +107,32 @@ export default function NewPost() {
       <main className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 lg:p-8">
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            {/* 타입 토글 */}
+            <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden text-sm font-medium w-fit">
+              <button
+                type="button"
+                onClick={() => setPostType("blog")}
+                className={`px-5 py-2 transition-colors ${
+                  postType === "blog"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"
+                }`}
+              >
+                블로그
+              </button>
+              <button
+                type="button"
+                onClick={() => setPostType("project")}
+                className={`px-5 py-2 transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                  postType === "project"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"
+                }`}
+              >
+                프로젝트
+              </button>
+            </div>
+
             {/* 에러 메시지 */}
             {error && (
               <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
@@ -203,24 +243,66 @@ export default function NewPost() {
               </p>
             </div>
 
-            {/* 이미지 URL */}
-            <div>
-              <label
-                htmlFor="image"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                이미지 URL
-              </label>
-              <input
-                type="text"
-                id="image"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                disabled={isLoading}
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors outline-none disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
+            {/* 이미지 URL — 블로그만 */}
+            {postType === "blog" && (
+              <div>
+                <label
+                  htmlFor="image"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  이미지 URL
+                </label>
+                <input
+                  type="text"
+                  id="image"
+                  value={image}
+                  onChange={(e) => setImage(e.target.value)}
+                  disabled={isLoading}
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors outline-none disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+            )}
+
+            {/* GitHub / Demo URL — 프로젝트만 */}
+            {postType === "project" && (
+              <>
+                <div>
+                  <label
+                    htmlFor="github"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    GitHub URL
+                  </label>
+                  <input
+                    type="text"
+                    id="github"
+                    value={github}
+                    onChange={(e) => setGithub(e.target.value)}
+                    disabled={isLoading}
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors outline-none disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                    placeholder="https://github.com/username/repo"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="demo"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Demo URL
+                  </label>
+                  <input
+                    type="text"
+                    id="demo"
+                    value={demo}
+                    onChange={(e) => setDemo(e.target.value)}
+                    disabled={isLoading}
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors outline-none disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                    placeholder="https://your-demo.com"
+                  />
+                </div>
+              </>
+            )}
 
             {/* 이미지 파일 업로드 */}
             <div>
