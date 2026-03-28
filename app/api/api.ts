@@ -105,6 +105,34 @@ export interface Project {
   image: string;
 }
 
+// 프로젝트 생성 요청 타입 (이미지는 파일만 허용)
+export interface CreateProjectData {
+  title: string;
+  description: string;
+  tags: string;
+  github: string;
+  demo: string;
+  image_file: File;
+}
+
+export const postProject = async (data: CreateProjectData): Promise<Project> => {
+  const formData = new FormData();
+  formData.append('title', data.title);
+  formData.append('description', data.description);
+  formData.append('tags', data.tags);
+  formData.append('github', data.github);
+  formData.append('demo', data.demo);
+  formData.append('image_file', data.image_file);
+
+  try {
+    const response = await api.post<Project>('/projects', formData);
+    return response.data;
+  } catch (error) {
+    console.error('프로젝트 생성 중 오류 발생:', error);
+    throw error;
+  }
+}
+
 //프로젝트 데이터 가져오는 함수
 export const getProjects = async (): Promise<Project[]> => {
   try{
@@ -220,3 +248,21 @@ export const logout = async (): Promise<void> => {
     throw error;
   }
 }
+interface createProject{
+  title: string;
+  description: string;
+  tags: string[];
+  github: string;
+  demo: string;
+  image: string;
+}
+export const createProject = async (data: createProject): Promise<Project> => {
+  try {
+    const response = await api.post<Project>('/projects', data);
+    return response.data;
+  } catch (error) {
+    console.error('프로젝트 생성 중 오류 발생:', error);
+    throw error;
+  }
+}
+
