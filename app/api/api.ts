@@ -59,7 +59,7 @@ api.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     // 403 에러이고 재시도하지 않은 요청인 경우
-    if (error.response?.status ===  403 && !originalRequest._retry) {
+    if (error.response?.status ===  401 && !originalRequest._retry) {
       console.log('⚠️ 403  에러 발생! 토큰 갱신 시도...');
       originalRequest._retry = true;
 
@@ -97,6 +97,7 @@ api.interceptors.response.use(
 
 //응답 타입 지정
 export interface Project {
+  id: string;
   title: string;
   description: string;
   tags: string[];
@@ -217,6 +218,46 @@ export const logout = async (): Promise<void> => {
     setAccessToken(null);
   } catch (error) {
     console.error('로그아웃 중 오류 발생:', error);
+    throw error;
+  }
+}
+// 프로젝트 생성 요청 타입 (이미지는 파일만 허용)
+export interface CreateProjectData {
+  title: string;
+  description: string;
+  tags: string;
+  github: string;
+  demo: string;
+  image_file: File;
+}
+
+export const postProject = async (data: CreateProjectData): Promise<Project> => {
+  const formData = new FormData();
+  formData.append('title', data.title);
+  formData.append('description', data.description);
+  formData.append('tags', data.tags);
+  formData.append('github', data.github);
+  formData.append('demo', data.demo);
+  formData.append('image_file', data.image_file);
+
+  try {
+    const response = await api.post<Project>('/projects', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('프로젝트 생성 중 오류 발생:', error);
+    throw error;
+  }
+}
+
+export const deleteProject = async (id: string): Promise<void> => {
+  try {
+    await api.delete(`/projects/${id}`);
+  } catch (error) {
+    console.error('프로젝트 삭제 중 오류 발생:', error);
     throw error;
   }
 }
