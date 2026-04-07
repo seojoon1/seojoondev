@@ -241,7 +241,11 @@ export const postProject = async (data: CreateProjectData): Promise<Project> => 
   formData.append('image_file', data.image_file);
 
   try {
-    const response = await api.post<Project>('/projects', formData);
+    const response = await api.post<Project>('/projects', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   } catch (error) {
     console.error('프로젝트 생성 중 오류 발생:', error);
