@@ -59,7 +59,7 @@ api.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     // 403 에러이고 재시도하지 않은 요청인 경우
-    if (error.response?.status ===  403 && !originalRequest._retry) {
+    if (error.response?.status ===  401 && !originalRequest._retry) {
       console.log('⚠️ 403  에러 발생! 토큰 갱신 시도...');
       originalRequest._retry = true;
 
@@ -97,6 +97,7 @@ api.interceptors.response.use(
 
 //응답 타입 지정
 export interface Project {
+  id: string;
   title: string;
   description: string;
   tags: string[];
